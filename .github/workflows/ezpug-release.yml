@@ -1,0 +1,56 @@
+name: ezpug release
+
+# The ezpug patch series (EZPUG.md) is released by pushing a tag
+# `v<upstream>-ezpug.<n>` on the `ezpug` branch. The zip has the same layout as
+# upstream's release asset, so the EZPug Iron CS2 image installs it the same
+# way and pins it by its SHA-256, which is printed here and attached beside it.
+on:
+  push:
+    tags:
+      - "v*-ezpug.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Test
+        run: dotnet test tests/MatchZy.Tests -c Release --nologo
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          if ! grep -q "ModuleVersion => \"${version}\"" src/MatchZy.cs; then
+            echo "src/MatchZy.cs does not say ModuleVersion ${version}" >&2
+            exit 1
+          fi
+          dotnet publish -c Release --nologo
+          dir="build/MatchZy-${version}"
+          mkdir -p "${dir}/addons/counterstrikesharp/plugins/MatchZy" "${dir}/cfg/MatchZy"
+          cp -r build/Release/net8.0/publish/* "${dir}/addons/counterstrikesharp/plugins/MatchZy/"
+          cp -r cfg/MatchZy/* "${dir}/cfg/MatchZy/"
+          (cd build && zip -r -q "MatchZy-${version}.zip" "MatchZy-${version}")
+          (cd build && sha256sum "MatchZy-${version}.zip" | tee "MatchZy-${version}.zip.sha256")
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "${GITHUB_REF_NAME}" \
+            "build/MatchZy-${version}.zip" "build/MatchZy-${version}.zip.sha256" \
+            --title "MatchZy-Enhanced ${version}" \
+            --notes-file EZPUG.md \
+            --verify-tag
