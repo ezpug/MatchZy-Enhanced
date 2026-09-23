@@ -401,7 +401,7 @@ public partial class MatchZy : BasePlugin
                 roster.Add(new MatchReportRosterEntry
                 {
                     SteamId = property.Name,
-                    Name = property.Value?.ToString() ?? ""
+                    Name = SimulationSeats.NameOf(property.Value)
                 });
             }
         }

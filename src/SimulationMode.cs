@@ -356,6 +356,7 @@ public partial class MatchZy
         simulationIdentityPool.Clear();
         assignedSimulationSteamIds.Clear();
         simulationPlayersByUserId.Clear();
+        int humans = 0;
 
         void AddFromTeam(JToken? teamPlayers, string teamSlot)
         {
@@ -364,7 +365,15 @@ public partial class MatchZy
                 foreach (var prop in obj.Properties())
                 {
                     string steamId = prop.Name;
-                    string name = prop.Value?.ToString() ?? "";
+                    string name = SimulationSeats.NameOf(prop.Value);
+                    // ezpug: a seat a person takes gets no bot and no identity; the person
+                    // connects under their own SteamID and readies through the ordinary gate.
+                    if (!SimulationSeats.IsSimulated(prop.Value))
+                    {
+                        humans++;
+                        Log($"[SimulationMode] {name} ({steamId}, {teamSlot}) is a person's seat; no bot will play it.");
+                        continue;
+                    }
                     simulationIdentityPool.Add(new SimulationPlayerIdentity(steamId, name, teamSlot));
                 }
             }
@@ -373,7 +382,7 @@ public partial class MatchZy
         AddFromTeam(matchzyTeam1.teamPlayers, "team1");
         AddFromTeam(matchzyTeam2.teamPlayers, "team2");
 
-        Log($"[SimulationMode] Built simulation config players - total: {simulationIdentityPool.Count}");
+        Log($"[SimulationMode] Built simulation config players - total: {simulationIdentityPool.Count}, seats left to people: {humans}");
     }
 
     /// <summary>

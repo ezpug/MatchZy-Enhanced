@@ -20,6 +20,7 @@
     <Compile Include="..\..\src\SimulationRosterLogic.cs" Link="SimulationRosterLogic.cs" />
     <Compile Include="..\..\src\DemoFileLocator.cs" Link="DemoFileLocator.cs" />
     <Compile Include="..\..\src\MatchRestartDelayLogic.cs" Link="MatchRestartDelayLogic.cs" />
+    <Compile Include="..\..\src\SimulationSeats.cs" Link="SimulationSeats.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +28,7 @@
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageReference Include="Dapper" Version="2.1.15" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.13" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.6" />
   </ItemGroup>

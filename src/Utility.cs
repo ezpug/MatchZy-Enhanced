@@ -3309,7 +3309,7 @@ namespace MatchZy
             foreach (JProperty player in players)
             {
                 string steamId = player.Name;
-                string escapedName = player.Value.ToString().Replace("\"", "\\\"").Trim();
+                string escapedName = SimulationSeats.NameOf(player.Value).Replace("\"", "\\\"").Trim();
 
                 if (string.IsNullOrEmpty(escapedName)) continue;
 
