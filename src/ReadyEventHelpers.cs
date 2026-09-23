@@ -15,8 +15,9 @@ public partial class MatchZy
         readyCountTeam1 = 0;
         readyCountTeam2 = 0;
 
-        // Prefer simulation-aware counts when available.
-        if (isSimulationMode && simulationPlayersByUserId.Count > 0)
+        // Prefer simulation-aware counts when available. ezpug: not when a person holds a seat;
+        // the mapping knows only the bots, so the side counts below are the honest ones then.
+        if (isSimulationMode && !SimulationHasHumans() && simulationPlayersByUserId.Count > 0)
         {
             foreach (var kvp in simulationPlayersByUserId)
             {
@@ -229,7 +230,7 @@ public partial class MatchZy
             // In simulation mode, require that all configured simulated players are
             // ready before emitting all_players_ready, so the API/FE always sees
             // a full 10/10 ready snapshot instead of just min_players_to_ready.
-            if (isSimulationMode && totalReady < expectedTotal)
+            if (isSimulationMode && !SimulationHasHumans() && totalReady < expectedTotal)
             {
                 Log($"[CheckAndSendTeamReadyEvent] Both sides flagged ready but only {totalReady}/{expectedTotal} simulated players ready; deferring all_players_ready.");
                 return;

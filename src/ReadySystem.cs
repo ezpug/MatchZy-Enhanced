@@ -128,8 +128,10 @@ public partial class MatchZy
             return;
         }
 
-        // Skip auto-ready in simulation mode - it has its own ready logic
-        if (isSimulationMode)
+        // Skip auto-ready in simulation mode - it has its own ready logic. ezpug: except for the
+        // seats it leaves to people, who are auto-readied like in any match (the bots are skipped
+        // below; the simulation readies them).
+        if (isSimulationMode && !SimulationHasHumans())
         {
             Log($"[CheckAndAutoReadyPlayers] Skipping - simulation mode");
             return;
@@ -172,6 +174,7 @@ public partial class MatchZy
             if (!playerData[key].IsValid) continue;
             
             var p = playerData[key];
+            if (isSimulationMode && simulationPlayersByUserId.ContainsKey(key)) continue;
             // Only mark players on CT or T teams, skip spectators
             if (p.TeamNum == (int)CsTeam.CounterTerrorist || p.TeamNum == (int)CsTeam.Terrorist)
             {

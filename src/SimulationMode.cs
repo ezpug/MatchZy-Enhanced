@@ -58,6 +58,19 @@ public partial class MatchZy
         isSimulationMode = false;
     }
 
+    /// <summary>
+    /// ezpug: whether this simulated match leaves any seat to a person (see SimulationSeats).
+    /// Then nothing may declare a team ready on the person's behalf: the bots are readied by the
+    /// simulation, the person by themselves (or by auto-ready, as in any match), and the ordinary
+    /// gate in IsTeamReady decides, which will not pass a team until the person's body is on it.
+    /// Read from the match config on every call, so it holds from the moment the match loads.
+    /// </summary>
+    private bool SimulationHasHumans()
+    {
+        return isSimulationMode
+            && (SimulationSeats.HasHumanSeat(matchzyTeam1.teamPlayers) || SimulationSeats.HasHumanSeat(matchzyTeam2.teamPlayers));
+    }
+
     private static bool IsConnectedSimulationBot(CCSPlayerController? player)
     {
         return player != null
@@ -226,8 +239,11 @@ public partial class MatchZy
 
             if (plan.MissingSlots.Count == 0 || forceReady)
             {
-                teamReadyOverride[CsTeam.CounterTerrorist] = true;
-                teamReadyOverride[CsTeam.Terrorist] = true;
+                if (!SimulationHasHumans())
+                {
+                    teamReadyOverride[CsTeam.CounterTerrorist] = true;
+                    teamReadyOverride[CsTeam.Terrorist] = true;
+                }
                 CheckAndSendTeamReadyEvent();
                 CheckLiveRequired();
             }
@@ -701,9 +717,12 @@ public partial class MatchZy
         if (readyAvailable && !matchStarted && isMatchSetup)
         {
             Log("[SimulationMode] All simulation bots mapped and ready. Setting team overrides and checking match start conditions.");
-            
-            teamReadyOverride[CsTeam.CounterTerrorist] = true;
-            teamReadyOverride[CsTeam.Terrorist] = true;
+
+            if (!SimulationHasHumans())
+            {
+                teamReadyOverride[CsTeam.CounterTerrorist] = true;
+                teamReadyOverride[CsTeam.Terrorist] = true;
+            }
             
             CheckAndSendTeamReadyEvent();
             CheckLiveRequired();
@@ -787,10 +806,16 @@ public partial class MatchZy
         AddTimer(totalDelay, () =>
         {
             // Ensure team-level ready state is satisfied and events are emitted.
-            teamReadyOverride[CsTeam.CounterTerrorist] = true;
-            teamReadyOverride[CsTeam.Terrorist] = true;
-
-            Log("[SimulationMode] Both teams marked ready via teamReadyOverride; invoking CheckAndSendTeamReadyEvent().");
+            if (SimulationHasHumans())
+            {
+                Log("[SimulationMode] Bots readied; the roster leaves seats to people, so the ordinary ready gate decides; invoking CheckAndSendTeamReadyEvent().");
+            }
+            else
+            {
+                teamReadyOverride[CsTeam.CounterTerrorist] = true;
+                teamReadyOverride[CsTeam.Terrorist] = true;
+                Log("[SimulationMode] Both teams marked ready via teamReadyOverride; invoking CheckAndSendTeamReadyEvent().");
+            }
             CheckAndSendTeamReadyEvent();
 
             // In simulation mode the internal match start logic (CheckLiveRequired)
