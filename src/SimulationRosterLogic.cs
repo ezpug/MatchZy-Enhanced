@@ -107,6 +107,16 @@ public static class SimulationRosterLogic
     }
 
     /// <summary>
+    /// ezpug: whether the watchdog may force-start after this many attempts. Never when the
+    /// roster leaves a seat to a person: the ready gate waits for them however long that takes,
+    /// and only an operator may start without them.
+    /// </summary>
+    public static bool ShouldWatchdogForceStart(int attempts, bool rosterHasHumanSeats)
+    {
+        return !rosterHasHumanSeats && attempts >= WatchdogForceStartAfterAttempts;
+    }
+
+    /// <summary>
     /// Whether a raw mp_warmup_end (what MAT's "end warmup" sends) should be routed through
     /// the plugin's own start path instead of just ending the engine warmup.
     /// </summary>

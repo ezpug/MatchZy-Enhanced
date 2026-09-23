@@ -304,7 +304,7 @@ public partial class MatchZy
     /// has been in warmup for <see cref="SimulationRosterLogic.WarmupWatchdogSeconds"/> real seconds,
     /// reconciles the roster and force-readies. It measures wall-clock time because game timers
     /// run faster under host_timescale. If reconciling twice has not got the match live, it
-    /// force-starts like css_start.
+    /// force-starts like css_start, unless the roster leaves a seat to a person (ezpug).
     /// </summary>
     private void StartSimulationWatchdog()
     {
@@ -336,6 +336,13 @@ public partial class MatchZy
 
         if (!matchStarted && readyAvailable && simulationWatchdogAttempts >= SimulationRosterLogic.WatchdogForceStartAfterAttempts)
         {
+            // ezpug: never start a match a person has a seat in; it waits for them however long
+            // that takes. An operator can still force it (css_start, mp_warmup_end).
+            if (!SimulationRosterLogic.ShouldWatchdogForceStart(simulationWatchdogAttempts, SimulationHasHumans()))
+            {
+                Log("[SimulationMode] Watchdog: not force-starting; the roster leaves seats to people and the ready gate waits for them.");
+                return;
+            }
             Log("[SimulationMode] Watchdog: reconcile did not get the match live; force-starting (same as css_start).");
             HandleMatchStart(allowAutoReadySimulationWithoutHumans: true);
         }

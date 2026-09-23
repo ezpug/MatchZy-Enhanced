@@ -70,3 +70,17 @@ public class SimulationSeatsTests
         Assert.False(SimulationSeats.HasHumanSeat(new JArray("tk")));
     }
 }
+
+public class SimulationWatchdogForceStartTests
+{
+    [Theory]
+    [InlineData(1, false, false)]
+    [InlineData(2, false, true)]
+    [InlineData(5, false, true)]
+    [InlineData(2, true, false)]
+    [InlineData(50, true, false)]
+    public void NeverForceStartsARosterWithAPersonsSeat(int attempts, bool humans, bool expected)
+    {
+        Assert.Equal(expected, SimulationRosterLogic.ShouldWatchdogForceStart(attempts, humans));
+    }
+}
