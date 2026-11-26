@@ -1,12 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- ezpug: an API CounterStrikeSharp marks obsolete is the API it deletes next, and the
+         plugin is a binary loaded by whatever runtime the server has, so using one fails the
+         build here instead of the load there. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS0612;CS0618;CS0619</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.342">
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.381">
         <PrivateAssets>none</PrivateAssets>
         <ExcludeAssets>runtime</ExcludeAssets>
         <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

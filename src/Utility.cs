@@ -1464,10 +1464,10 @@ namespace MatchZy
                     // external config or plugin is fighting us.
                     try
                     {
-                        var otCvar = ConVar.Find("mp_overtime_enable");
+                        var otCvar = ConVar<int>.Find("mp_overtime_enable");
                         if (otCvar != null)
                         {
-                            int current = otCvar.GetPrimitiveValue<int>();
+                            int current = otCvar.Value;
                             Log($"[OvertimeConfig] mp_overtime_enable is now '{current}' after ApplyOvertimeAndMaxRoundsFromConfig (mode={matchConfig.OvertimeMode}).");
                         }
                     }
@@ -1535,7 +1535,7 @@ namespace MatchZy
 
                         // A player controller still exists after a player disconnects
                         // Hence checking whether the player is actually in the server or not
-                        if (player.Connected != PlayerConnectedState.PlayerConnected) continue;
+                        if (player.Connected != PlayerConnectedState.Connected) continue;
 
                         if (player.UserId.HasValue)
                         {
@@ -2173,7 +2173,7 @@ namespace MatchZy
             // Ref: Get5
             // The raise is computed per map from the operator's original value and the current
             // tv_delay, and undone on reset, so one long-delay match no longer leaks into later ones.
-            int currentRestartDelay = ConVar.Find("mp_match_restart_delay")!.GetPrimitiveValue<int>();
+            int currentRestartDelay = ConVar<int>.Find("mp_match_restart_delay")!.Value;
             int tvDelay = GetTvDelay();
             bool hasUploadEndpoint = !string.IsNullOrEmpty(demoUploadURL);
             MatchEndDelays delays = matchRestartDelay.Compute(currentRestartDelay, tvDelay, isDemoRecordingEnabled, hasUploadEndpoint);
@@ -2183,7 +2183,7 @@ namespace MatchZy
             if (delays.CvarToSet is int newRestartDelay)
             {
                 Log($"Set mp_match_restart_delay from {currentRestartDelay} to {newRestartDelay} for tv_delay {tvDelay} (original: {matchRestartDelay.OriginalDelay}) to ensure GOTV broadcast can finish.");
-                ConVar.Find("mp_match_restart_delay")!.SetValue(newRestartDelay);
+                ConVar<int>.Find("mp_match_restart_delay")!.Value = newRestartDelay;
             }
 
             if (!isDemoRecordingEnabled)
@@ -2720,10 +2720,10 @@ namespace MatchZy
             var gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules!;
             int roundsPlayed = gameRules.TotalRoundsPlayed;
 
-            int roundsPerHalf = ConVar.Find("mp_maxrounds")!.GetPrimitiveValue<int>() / 2;
-            int roundsPerOTHalf = ConVar.Find("mp_overtime_maxrounds")!.GetPrimitiveValue<int>() / 2;
+            int roundsPerHalf = ConVar<int>.Find("mp_maxrounds")!.Value / 2;
+            int roundsPerOTHalf = ConVar<int>.Find("mp_overtime_maxrounds")!.Value / 2;
 
-            bool halftimeEnabled = ConVar.Find("mp_halftime")!.GetPrimitiveValue<bool>();
+            bool halftimeEnabled = ConVar<bool>.Find("mp_halftime")!.Value;
 
             if (halftimeEnabled)
             {
@@ -3050,7 +3050,7 @@ namespace MatchZy
             foreach (var kvp in playerData)
             {
                 var p = kvp.Value;
-                if (p != null && p.IsValid && !p.IsBot && !p.IsHLTV && p.Connected == PlayerConnectedState.PlayerConnected && p.TeamNum == teamNum)
+                if (p != null && p.IsValid && !p.IsBot && !p.IsHLTV && p.Connected == PlayerConnectedState.Connected && p.TeamNum == teamNum)
                 {
                     teamPlayerCount++;
                 }
@@ -3326,25 +3326,30 @@ namespace MatchZy
             return false;
         }
 
-        public string GetConvarStringValue(ConVar? cvar)
+        /// <summary>
+        /// ezpug: a cvar by name whatever its type, or null. <c>ConVar&lt;T&gt;.Find</c> resolves
+        /// the handle by name alone and checks <c>T</c> only when <c>Value</c> is read, so any
+        /// <c>T</c> finds any cvar; it is returned as the untyped base so nothing reads the
+        /// arbitrary <c>T</c>. <see cref="ConVarBase.Type"/> says what it is.
+        /// </summary>
+        public static ConVarBase? FindConVar(string name) => ConVar<string>.Find(name);
+
+        /// <summary>ezpug: <see cref="ConvarValues"/> over a cvar the engine holds.</summary>
+        private readonly struct EngineCvarValue(ConVarBase cvar) : ConvarValues.ICvarValue
+        {
+            public T Read<T>() => cvar.As<T>().Value;
+
+            public void Write<T>(T value) => cvar.As<T>().Value = value;
+
+            public string Text => cvar.ValueAsString;
+        }
+
+        public string GetConvarStringValue(ConVarBase? cvar)
         {
             try
             {
                 if (cvar == null) return "";
-                string convarValue = cvar.Type switch
-                {
-                    ConVarType.Bool => cvar.GetPrimitiveValue<bool>().ToString(),
-                    ConVarType.Float32 or ConVarType.Float64 => cvar.GetPrimitiveValue<float>().ToString(),
-                    ConVarType.UInt16 => cvar.GetPrimitiveValue<ushort>().ToString(),
-                    ConVarType.Int16 => cvar.GetPrimitiveValue<short>().ToString(),
-                    ConVarType.UInt32 => cvar.GetPrimitiveValue<uint>().ToString(),
-                    ConVarType.Int32 => cvar.GetPrimitiveValue<int>().ToString(),
-                    ConVarType.Int64 => cvar.GetPrimitiveValue<long>().ToString(),
-                    ConVarType.UInt64 => cvar.GetPrimitiveValue<ulong>().ToString(),
-                    ConVarType.String => cvar.StringValue,
-                    _ => "",
-                };
-                return convarValue;
+                return ConvarValues.Format(cvar.Type, new EngineCvarValue(cvar));
             }
             catch (Exception ex)
             {
@@ -3354,33 +3359,16 @@ namespace MatchZy
 
         }
 
-        public void SetConvarValue(ConVar? cvar, string value)
+        public void SetConvarValue(ConVarBase? cvar, string value)
         {
             if (cvar == null) return;
-            Dictionary<ConVarType, Action<string>> conversionMap = new()
+            try
             {
-                { ConVarType.Bool, v => cvar.SetValue(int.TryParse(v, out int intValue) && intValue >= 1 || Convert.ToBoolean(v) ) },
-                { ConVarType.Float32, v => cvar.SetValue(Convert.ToSingle(v)) },
-                { ConVarType.Float64, v => cvar.SetValue(Convert.ToSingle(v)) },
-                { ConVarType.UInt16, v => cvar.SetValue(Convert.ToUInt16(v)) },
-                { ConVarType.Int16, v => cvar.SetValue(Convert.ToInt16(v)) },
-                { ConVarType.UInt32, v => cvar.SetValue(Convert.ToUInt32(v)) },
-                { ConVarType.Int32, v => cvar.SetValue(Convert.ToInt32(v)) },
-                { ConVarType.Int64, v => cvar.SetValue(Convert.ToInt64(v)) },
-                { ConVarType.UInt64, v => cvar.SetValue(Convert.ToUInt64(v)) },
-                { ConVarType.String, v => cvar.SetValue(v) },
-            };
-
-            if (conversionMap.TryGetValue(cvar.Type, out var conversion))
+                ConvarValues.Assign(cvar.Type, new EngineCvarValue(cvar), value);
+            }
+            catch (Exception ex)
             {
-                try
-                {
-                    conversion(value);
-                }
-                catch (Exception ex)
-                {
-                    Log($"[SetConvarValue - FATAL] Exception occurred: {ex.Message}");
-                }
+                Log($"[SetConvarValue - FATAL] Exception occurred: {ex.Message}");
             }
         }
 
@@ -3421,13 +3409,13 @@ namespace MatchZy
         /// </summary>
         private void RestoreMatchRestartDelay(string reason)
         {
-            var cvar = ConVar.Find("mp_match_restart_delay");
+            var cvar = ConVar<int>.Find("mp_match_restart_delay");
             if (cvar == null) return;
-            int current = cvar.GetPrimitiveValue<int>();
+            int current = cvar.Value;
             if (matchRestartDelay.Restore(current) is int original)
             {
                 Log($"[RestoreMatchRestartDelay] Restoring mp_match_restart_delay from {current} to {original} ({reason}).");
-                cvar.SetValue(original);
+                cvar.Value = original;
             }
         }
 
@@ -3718,7 +3706,7 @@ namespace MatchZy
             string? convarBindIp = null;
             try
             {
-                convarBindIp = ConVar.Find("ip")?.StringValue;
+                convarBindIp = FindConVar("ip")?.ValueAsString;
             }
             catch { /* the convar is optional */ }
 
@@ -3729,16 +3717,16 @@ namespace MatchZy
             {
                 try
                 {
-                    var hostPortConVar = ConVar.Find("hostport");
+                    var hostPortConVar = ConVar<int>.Find("hostport");
                     if (hostPortConVar != null)
                     {
                         try
                         {
-                            hostport = hostPortConVar.GetPrimitiveValue<int>();
+                            hostport = hostPortConVar.Value;
                         }
                         catch
                         {
-                            if (int.TryParse(hostPortConVar.StringValue, out int parsed)) hostport = parsed;
+                            if (int.TryParse(hostPortConVar.ValueAsString, out int parsed)) hostport = parsed;
                         }
                     }
                 }
@@ -4048,28 +4036,28 @@ namespace MatchZy
 
         public int GetGameMode()
         {
-            var convar = ConVar.Find("game_mode");
+            var convar = ConVar<int>.Find("game_mode");
             if (convar != null)
             {
-                return convar.GetPrimitiveValue<int>();
+                return convar.Value;
             }
             return -1;
         }
 
         public int GetGameType()
         {
-            var convar = ConVar.Find("game_type");
+            var convar = ConVar<int>.Find("game_type");
             if (convar != null)
             {
-                return convar.GetPrimitiveValue<int>();
+                return convar.Value;
             }
             return -1;
         }
 
         public void SetCorrectGameMode()
         {
-            ConVar.Find("game_mode")!.SetValue(matchConfig.Wingman ? 2 : 1);
-            ConVar.Find("game_type")!.SetValue(0); // Classic GameType
+            ConVar<int>.Find("game_mode")!.Value = matchConfig.Wingman ? 2 : 1;
+            ConVar<int>.Find("game_type")!.Value = 0; // Classic GameType
         }
 
         public bool IsMapReloadRequiredForGameMode(bool wingman)

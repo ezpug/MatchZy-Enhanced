@@ -863,7 +863,7 @@ namespace MatchZy
         {
             if (player == null || !player.PawnIsAlive || player.Team == CsTeam.Spectator || player.Team == CsTeam.None)
                 return HookResult.Stop;
-            bool cheatsEnabled = ConVar.Find("sv_cheats")!.GetPrimitiveValue<bool>();
+            bool cheatsEnabled = ConVar<bool>.Find("sv_cheats")!.Value;
             if (!cheatsEnabled)
             {
                 return HookResult.Stop;

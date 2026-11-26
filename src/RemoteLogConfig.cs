@@ -104,8 +104,8 @@ namespace MatchZy
                 }
 
                 // Get server hostname from ConVar
-                var hostnameConvar = ConVar.Find("hostname");
-                string hostname = hostnameConvar?.StringValue ?? "Unknown Server";
+                var hostnameConvar = FindConVar("hostname");
+                string hostname = hostnameConvar?.ValueAsString ?? "Unknown Server";
 
                 var serverConfiguredEvent = new MatchZyServerConfiguredEvent
                 {

@@ -1695,11 +1695,11 @@ namespace MatchZy
         {
             if (!isPractice || !IsPlayerValid(player)) return;
 
-            int solidValue = ConVar.Find("mp_solid_teammates")!.GetPrimitiveValue<int>();
+            int solidValue = ConVar<int>.Find("mp_solid_teammates")!.Value;
 
             int newSolidValue = (solidValue == 0 || solidValue == 1) ? 2 : 1;
 
-            ConVar.Find("mp_solid_teammates")!.SetValue(newSolidValue);
+            ConVar<int>.Find("mp_solid_teammates")!.Value = newSolidValue;
 
             PrintToAllChat($"mp_solid_teammates is now set to {newSolidValue}");
         }
@@ -1709,7 +1709,7 @@ namespace MatchZy
         {
             if (!isPractice || !IsPlayerValid(player)) return;
 
-            int impactValue = ConVar.Find("sv_showimpacts")!.GetPrimitiveValue<int>();
+            int impactValue = ConVar<int>.Find("sv_showimpacts")!.Value;
 
             int newImpactValue = 1 - impactValue;
 
@@ -1724,7 +1724,7 @@ namespace MatchZy
         {
             if (!isPractice || !IsPlayerValid(player)) return;
 
-            bool trajValue = ConVar.Find("sv_grenade_trajectory_prac_pipreview")!.GetPrimitiveValue<bool>();
+            bool trajValue = ConVar<bool>.Find("sv_grenade_trajectory_prac_pipreview")!.Value;
 
             Server.ExecuteCommand($"sv_grenade_trajectory_prac_pipreview {!trajValue}");
 

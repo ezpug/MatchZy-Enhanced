@@ -36,16 +36,16 @@ public partial class MatchZy
     private static bool _offlineWarningLogged;
 
     // Cvars we care about from MatchZy
-    private static ConVar? _matchzyTournamentStatus;
-    private static ConVar? _matchzyTournamentMatch;
+    private static ConVar<string>? _matchzyTournamentStatus;
+    private static ConVar<string>? _matchzyTournamentMatch;
 
     /// <summary>
     /// Initialize the MatchZy-safe auto-updater. Called from MatchZy.Load().
     /// </summary>
     private void InitializeMatchZySafeAutoUpdater()
     {
-        _matchzyTournamentStatus = ConVar.Find("matchzy_tournament_status");
-        _matchzyTournamentMatch = ConVar.Find("matchzy_tournament_match");
+        _matchzyTournamentStatus = ConVar<string>.Find("matchzy_tournament_status");
+        _matchzyTournamentMatch = ConVar<string>.Find("matchzy_tournament_match");
 
         RegisterListener<Listeners.OnGameServerSteamAPIActivated>(OnGameServerSteamAPIActivated);
 
@@ -236,7 +236,7 @@ public partial class MatchZy
     {
         try
         {
-            return _matchzyTournamentStatus?.GetPrimitiveValue<string>() ?? "idle";
+            return _matchzyTournamentStatus?.Value ?? "idle";
         }
         catch
         {
@@ -248,7 +248,7 @@ public partial class MatchZy
     {
         try
         {
-            return _matchzyTournamentMatch?.GetPrimitiveValue<string>() ?? "";
+            return _matchzyTournamentMatch?.Value ?? "";
         }
         catch
         {
@@ -299,9 +299,9 @@ public partial class MatchZy
             {
                 switch (player.Connected)
                 {
-                    case PlayerConnectedState.PlayerConnected:
-                    case PlayerConnectedState.PlayerConnecting:
-                    case PlayerConnectedState.PlayerReconnecting:
+                    case PlayerConnectedState.Connected:
+                    case PlayerConnectedState.Connecting:
+                    case PlayerConnectedState.Reconnecting:
                         Server.ExecuteCommand(
                             $"kickid {player.UserId} Due to the game update (Version: {_requiredVersion}), the server is now restarting.");
                         break;

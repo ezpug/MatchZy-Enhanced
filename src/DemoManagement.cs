@@ -70,16 +70,16 @@ namespace MatchZy
             bool tvEnable = false;
             try
             {
-                var tv = ConVar.Find("tv_enable");
+                var tv = ConVar<bool>.Find("tv_enable");
                 if (tv != null)
                 {
-                    tvEnable = tv.GetPrimitiveValue<bool>();
+                    tvEnable = tv.Value;
                     if (!tvEnable)
                     {
                         Log("[StartDemoRecording] tv_enable is 0. Forcing tv_enable 1 to ensure demo recording works.");
-                        tv.SetValue(1);
+                        tv.Value = true;
                         // Re-read after forcing.
-                        tvEnable = tv.GetPrimitiveValue<bool>();
+                        tvEnable = tv.Value;
                         Log($"[StartDemoRecording] tv_enable now: {(tvEnable ? 1 : 0)}");
                     }
                 }
@@ -258,14 +258,14 @@ namespace MatchZy
 
         public int GetTvDelay()
         {
-            bool tvEnable = ConVar.Find("tv_enable")!.GetPrimitiveValue<bool>();
+            bool tvEnable = ConVar<bool>.Find("tv_enable")!.Value;
             if (!tvEnable) return 0;
 
-            bool tvEnable1 = ConVar.Find("tv_enable1")!.GetPrimitiveValue<bool>();
-            int tvDelay = ConVar.Find("tv_delay")!.GetPrimitiveValue<int>();
+            bool tvEnable1 = ConVar<bool>.Find("tv_enable1")!.Value;
+            int tvDelay = ConVar<int>.Find("tv_delay")!.Value;
 
             if (!tvEnable1) return tvDelay;
-            int tvDelay1 = ConVar.Find("tv_delay1")!.GetPrimitiveValue<int>();
+            int tvDelay1 = ConVar<int>.Find("tv_delay1")!.Value;
 
             if (tvDelay < tvDelay1) return tvDelay1;
             return tvDelay;

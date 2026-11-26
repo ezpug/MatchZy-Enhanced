@@ -702,7 +702,7 @@ namespace MatchZy
                     string cvarName = cvarData.Name;
                     string cvarValue = cvarData.Value.ToString();
 
-                    var cvar = ConVar.Find(cvarName);
+                    var cvar = FindConVar(cvarName);
                     matchConfig.ChangedCvars[cvarName] = cvarValue;
                     if (cvar != null)
                     {
@@ -930,8 +930,8 @@ namespace MatchZy
                 // Check if this is halftime or overtime
                 var gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules!;
                 int roundsPlayed = gameRules.TotalRoundsPlayed;
-                int roundsPerHalf = ConVar.Find("mp_maxrounds")!.GetPrimitiveValue<int>() / 2;
-                int roundsPerOTHalf = ConVar.Find("mp_overtime_maxrounds")!.GetPrimitiveValue<int>() / 2;
+                int roundsPerHalf = ConVar<int>.Find("mp_maxrounds")!.Value / 2;
+                int roundsPerOTHalf = ConVar<int>.Find("mp_overtime_maxrounds")!.Value / 2;
 
                 if (roundsPlayed == roundsPerHalf)
                 {
@@ -1154,7 +1154,7 @@ namespace MatchZy
                 {
                     if (player == null) continue;
                     if (!player.IsValid || player.IsBot || player.IsHLTV) continue;
-                    if (player.Connected != PlayerConnectedState.PlayerConnected) continue;
+                    if (player.Connected != PlayerConnectedState.Connected) continue;
 
                     if (player.UserId.HasValue)
                     {

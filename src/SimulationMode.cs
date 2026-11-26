@@ -78,7 +78,7 @@ public partial class MatchZy
             && player.IsBot
             && !player.IsHLTV
             && player.UserId.HasValue
-            && player.Connected == PlayerConnectedState.PlayerConnected;
+            && player.Connected == PlayerConnectedState.Connected;
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public partial class MatchZy
                 }
 
                 int quota = 0;
-                try { quota = ConVar.Find("bot_quota")?.GetPrimitiveValue<int>() ?? 0; } catch { }
+                try { quota = ConVar<int>.Find("bot_quota")?.Value ?? 0; } catch { }
 
                 // If the quota already expects more bots than are connected the engine is not
                 // refilling it, so add explicitly; otherwise raise the quota by one on the side.
@@ -1023,7 +1023,7 @@ public partial class MatchZy
         foreach (var staleUserId in new List<int>(playerData.Keys))
         {
             var tracked = playerData[staleUserId];
-            if (tracked == null || !tracked.IsValid || tracked.Connected != PlayerConnectedState.PlayerConnected)
+            if (tracked == null || !tracked.IsValid || tracked.Connected != PlayerConnectedState.Connected)
             {
                 playerData.Remove(staleUserId);
                 playerReadyStatus.Remove(staleUserId);
@@ -1071,7 +1071,7 @@ public partial class MatchZy
             {
                 if (player == null) continue;
                 if (!player.IsValid || !player.IsBot || player.IsHLTV) continue;
-                if (player.Connected != PlayerConnectedState.PlayerConnected) continue;
+                if (player.Connected != PlayerConnectedState.Connected) continue;
 
                 bots.Add(player);
             }
