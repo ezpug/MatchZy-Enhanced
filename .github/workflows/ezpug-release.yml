@@ -20,10 +20,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "10.0.x"
 
       - name: Test
         run: dotnet test tests/MatchZy.Tests -c Release --nologo
@@ -39,7 +39,7 @@ jobs:
           dotnet publish -c Release --nologo
           dir="build/MatchZy-${version}"
           mkdir -p "${dir}/addons/counterstrikesharp/plugins/MatchZy" "${dir}/cfg/MatchZy"
-          cp -r build/Release/net8.0/publish/* "${dir}/addons/counterstrikesharp/plugins/MatchZy/"
+          cp -r build/Release/net10.0/publish/* "${dir}/addons/counterstrikesharp/plugins/MatchZy/"
           cp -r cfg/MatchZy/* "${dir}/cfg/MatchZy/"
           (cd build && zip -r -q "MatchZy-${version}.zip" "MatchZy-${version}")
           (cd build && sha256sum "MatchZy-${version}.zip" | tee "MatchZy-${version}.zip.sha256")
