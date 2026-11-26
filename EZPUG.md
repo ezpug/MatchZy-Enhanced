@@ -49,6 +49,9 @@ binary built against 1.0.342 fails at load while every build still passes.
   purpose. A `Float64` cvar is read and written as a `double`, where the untyped API used a
   `float`. The safe auto-updater reads the `matchzy_tournament_*` strings, which the
   untyped `GetPrimitiveValue<string>` always refused (it fell back to `idle`).
+- `ezpug: build.yml on .NET 10, matching the net10.0 target since CounterStrikeSharp 1.0.381`
+  — upstream's own build workflow (pushes to `main`/`dev` and pull requests) installs the
+  SDK the target needs. The release workflow already did.
 
 ## Rebasing onto a new upstream release
 
